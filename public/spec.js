@@ -25,8 +25,8 @@ var spec = {
                 operationId: "getAllRecruitments",
                 produces: ["application/json"],
                 responses: {
-                    200: { description: "Successful operation", schema: { type: "array", items: { $ref: "#/definitions/Job" } } },
-                    500: { description: "Failed to fetch jobs" }
+                    200: { description: "Successful operation", schema: { type: "array", items: { $ref: "#/definitions/JobSuccess" } } },
+                    500: { description: "Lỗi truy xuất dữ liệu", schema: { $ref: "#/definitions/JobError" } }
                 }
             }
         },
@@ -266,12 +266,18 @@ var spec = {
         }
     },
     definitions: {
-        Job: {
+        JobSuccess: {
             type: "object",
             properties: {
                 id: { type: "integer" },
                 title: { type: "string" },
                 description: { type: "string" }
+            }
+        },
+        JobError: {
+            type: "object",
+            properties: {
+                error: { type: "string", example: "Lỗi truy xuất dữ liệu" }
             }
         },
         BannerResponse: {
