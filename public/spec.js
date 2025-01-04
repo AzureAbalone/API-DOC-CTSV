@@ -38,9 +38,9 @@ var spec = {
                 operationId: "APIBanner",
                 produces: ["application/json"],
                 responses: {
-                    200: { description: "Successful operation", schema: { $ref: "#/definitions/BannerResponse" } },
-                    404: { description: "No banners found" },
-                    500: { description: "Failed to fetch banner data" }
+                    200: { description: "Successful operation", schema: { $ref: "#/definitions/BannerSuccessResponse" } },
+                    404: { description: "No banners found", schema: { $ref: "#/definitions/BannerNotFoundError" } },
+                    500: { description: "Failed to fetch banner data", schema: { $ref: "#/definitions/BannerError" } }
                 }
             }
         },
@@ -52,9 +52,9 @@ var spec = {
                 operationId: "APILogo",
                 produces: ["application/json"],
                 responses: {
-                    200: { description: "Successful operation", schema: { $ref: "#/definitions/LogoResponse" } },
-                    404: { description: "No logos found" },
-                    500: { description: "Failed to fetch logo data" }
+                    200: { description: "Successful operation", schema: { $ref: "#/definitions/LogoSuccessResponse" } },
+                    404: { description: "No logos found", schema: { $ref: "#/definitions/LogoNotFoundError" } },
+                    500: { description: "Failed to fetch logo data", schema: { $ref: "#/definitions/LogoError" } }
                 }
             }
         },
@@ -270,8 +270,21 @@ var spec = {
             type: "object",
             properties: {
                 id: { type: "integer" },
-                title: { type: "string" },
-                description: { type: "string" }
+                muc_luong: { type: "string" },
+                noi_lam_viec: { type: "string" },
+                so_luong: { type: "integer" },
+                kinh_nghiem: { type: "string" },
+                bang_cap: { type: "string" },
+                vi_tri: { type: "string" },
+                chuyen_nganh: { type: "string" },
+                dai_dien: { type: "string" },
+                dia_chi: { type: "string" },
+                quyen_loi: { type: "string" },
+                yeu_cau_cong_viec: { type: "string" },
+                yeu_cau_ho_so: { type: "string" },
+                imageURL: { type: "string" },
+                createDate: { type: "string", format: "date-time" },
+                updateDate: { type: "string", format: "date-time", nullable: true }
             }
         },
         JobError: {
@@ -297,21 +310,46 @@ var spec = {
                 image_url: { type: "string" }
             }
         },
-        LogoResponse: {
+        LogoSuccessResponse: {
             type: "object",
             properties: {
-                status: { type: "string" },
-                success: { type: "boolean" },
-                message: { type: "string" },
-                data: { type: "array", items: { $ref: "#/definitions/Logo" } },
+                status: { type: "string", example: "success" },
+                success: { type: "boolean", example: true },
+                message: { type: "string", example: "Fetched logo data successfully" },
+                data: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            imageId: { type: "integer" },
+                            logoURL: { type: "string" },
+                            createDate: { type: "string", format: "date-time" },
+                            createBy: { type: "string" },
+                            status: { type: "string" }
+                        }
+                    }
+                },
                 count: { type: "integer" }
             }
         },
-        Logo: {
+        LogoNotFoundError: {
             type: "object",
             properties: {
-                id: { type: "integer" },
-                image_url: { type: "string" }
+                status: { type: "string", example: "error" },
+                success: { type: "boolean", example: false },
+                message: { type: "string", example: "No logos found" },
+                error: { type: "string", example: "Không tìm thấy logo nào" },
+                data: { type: "object", nullable: true, example: null }
+            }
+        },
+        LogoError: {
+            type: "object",
+            properties: {
+                status: { type: "string", example: "error" },
+                success: { type: "boolean", example: false },
+                message: { type: "string", example: "Failed to fetch logo data" },
+                error: { type: "string", example: "Đã xảy ra lỗi khi lấy thông tin logo" },
+                data: { type: "object", nullable: true, example: null }
             }
         },
         OtherImageResponse: {
@@ -364,6 +402,48 @@ var spec = {
                 updated_at: { type: "string", format: "date-time" },
                 image_url: { type: "string" },
                 registration_deadline: { type: "string", format: "date-time" }
+            }
+        },
+        BannerError: {
+            type: "object",
+            properties: {
+                status: { type: "string", example: "error" },
+                success: { type: "boolean", example: false },
+                message: { type: "string", example: "Failed to fetch banner data" },
+                error: { type: "string", example: "Đã xảy ra lỗi khi lấy thông tin banner" },
+                data: { type: "object", nullable: true, example: null }
+            }
+        },
+        BannerNotFoundError: {
+            type: "object",
+            properties: {
+                status: { type: "string", example: "error" },
+                success: { type: "boolean", example: false },
+                message: { type: "string", example: "No banners found" },
+                error: { type: "string", example: "Không tìm thấy banner nào" },
+                data: { type: "object", nullable: true, example: null }
+            }
+        },
+        BannerSuccessResponse: {
+            type: "object",
+            properties: {
+                status: { type: "string", example: "success" },
+                success: { type: "boolean", example: true },
+                message: { type: "string", example: "Fetched banner data successfully" },
+                data: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            imageId: { type: "integer" },
+                            logoURL: { type: "string" },
+                            createDate: { type: "string", format: "date-time" },
+                            createBy: { type: "string" },
+                            status: { type: "string" }
+                        }
+                    }
+                },
+                count: { type: "integer" }
             }
         }
     }
