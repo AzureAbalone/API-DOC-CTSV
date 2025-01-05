@@ -222,19 +222,6 @@ var spec = {
                 }
             }
         },
-        "/v1/search": {
-            get: {
-                tags: ["search"],
-                summary: "Search API",
-                description: "Performs a search operation",
-                operationId: "search",
-                produces: ["application/json"],
-                responses: {
-                    200: { description: "Search successful" },
-                    500: { description: "Search failed" }
-                }
-            }
-        },
         "/v1/login": {
             post: {
                 tags: ["auth"],
@@ -242,11 +229,37 @@ var spec = {
                 description: "Logs in a student",
                 operationId: "studentLogin",
                 parameters: [
-                    { name: "body", in: "body", description: "Login credentials", required: true, schema: { type: "object", properties: { username: { type: "string" }, password: { type: "string" } } } }
+                    {
+                        name: "body",
+                        in: "body",
+                        description: "Login credentials",
+                        required: true,
+                        schema: {
+                            type: "object",
+                            properties: {
+                                username: { type: "string" },
+                                password: { type: "string" }
+                            }
+                        }
+                    }
                 ],
                 responses: {
-                    200: { description: "Login successful" },
-                    401: { description: "Unauthorized" }
+                    200: {
+                        description: "Successful login",
+                        schema: { $ref: "#/definitions/LoginSuccess" }
+                    },
+                    401: {
+                        description: "Unauthorized - incorrect username or password",
+                        schema: { $ref: "#/definitions/LoginUnauthorized" }
+                    },
+                    400: {
+                        description: "reCAPTCHA verification required",
+                        schema: { $ref: "#/definitions/LoginRecaptchaRequired" }
+                    },
+                    500: {
+                        description: "Server error during login",
+                        schema: { $ref: "#/definitions/LoginServerError" }
+                    }
                 }
             }
         },
@@ -257,7 +270,10 @@ var spec = {
                 description: "Logs out a student",
                 operationId: "studentLogout",
                 responses: {
-                    200: { description: "Logout successful" }
+                    200: {
+                        description: "Logout successful",
+                        schema: { $ref: "#/definitions/LogoutSuccess" }
+                    }
                 }
             }
         },
@@ -269,11 +285,37 @@ var spec = {
                 operationId: "changePass",
                 parameters: [
                     { name: "id", in: "path", description: "ID of student", required: true, type: "integer" },
-                    { name: "body", in: "body", description: "New password", required: true, schema: { type: "object", properties: { newPassword: { type: "string" } } } }
+                    {
+                        name: "body",
+                        in: "body",
+                        description: "New password",
+                        required: true,
+                        schema: {
+                            type: "object",
+                            properties: {
+                                oldPassword: { type: "array", items: { type: "string" } },
+                                newPassword: { type: "array", items: { type: "string" } }
+                            }
+                        }
+                    }
                 ],
                 responses: {
-                    200: { description: "Password changed successfully" },
-                    500: { description: "Failed to change password" }
+                    200: {
+                        description: "Password changed successfully",
+                        schema: { $ref: "#/definitions/PasswordChangeSuccess" }
+                    },
+                    401: {
+                        description: "Incorrect old password",
+                        schema: { $ref: "#/definitions/IncorrectOldPasswordError" }
+                    },
+                    404: {
+                        description: "User not found or account inactive",
+                        schema: { $ref: "#/definitions/UserNotFoundError" }
+                    },
+                    500: {
+                        description: "Server error during password change",
+                        schema: { $ref: "#/definitions/PasswordChangeServerError" }
+                    }
                 }
             }
         },
@@ -284,11 +326,49 @@ var spec = {
                 description: "Receives an OTP for verification",
                 operationId: "receiveOTP",
                 parameters: [
-                    { name: "body", in: "body", description: "OTP request details", required: true, schema: { type: "object", properties: { phoneNumber: { type: "string" } } } }
+                    {
+                        name: "body",
+                        in: "body",
+                        description: "OTP request details",
+                        required: true,
+                        schema: {
+                            type: "object",
+                            properties: {
+                                email: { type: "string" },
+                                recaptchaToken: { type: "string" }
+                            }
+                        }
+                    }
                 ],
                 responses: {
-                    200: { description: "OTP sent successfully" },
-                    500: { description: "Failed to send OTP" }
+                    200: {
+                        description: "OTP sent successfully",
+                        schema: { $ref: "#/definitions/OTPSuccess" }
+                    },
+                    402: {
+                        description: "Bad request due to reCAPTCHA failure",
+                        schema: { $ref: "#/definitions/OTPBadRequest" }
+                    },
+                    401: {
+                        description: "OTP limit reached",
+                        schema: { $ref: "#/definitions/OTPLimitReached" }
+                    },
+                    403: {
+                        description: "reCAPTCHA verification failed",
+                        schema: { $ref: "#/definitions/OTPRecaptchaFailed" }
+                    },
+                    404: {
+                        description: "Student account not found or inactive",
+                        schema: { $ref: "#/definitions/OTPNotFoundError" }
+                    },
+                    429: {
+                        description: "Too many requests, please wait",
+                        schema: { $ref: "#/definitions/OTPTooManyRequests" }
+                    },
+                    500: {
+                        description: "Failed to send OTP",
+                        schema: { $ref: "#/definitions/OTPServerError" }
+                    }
                 }
             }
         },
@@ -300,11 +380,42 @@ var spec = {
                 operationId: "forgotPass",
                 parameters: [
                     { name: "id", in: "path", description: "ID of student", required: true, type: "integer" },
-                    { name: "body", in: "body", description: "OTP and new password", required: true, schema: { type: "object", properties: { otp: { type: "string" }, newPassword: { type: "string" } } } }
+                    {
+                        name: "body",
+                        in: "body",
+                        description: "OTP and new password",
+                        required: true,
+                        schema: {
+                            type: "object",
+                            properties: {
+                                OTP: { type: "string" },
+                                timestamp: { type: "integer" },
+                                newPassword: { type: "string" }
+                            }
+                        }
+                    }
                 ],
                 responses: {
-                    200: { description: "OTP verified and password reset" },
-                    500: { description: "Failed to verify OTP" }
+                    200: {
+                        description: "OTP verified and password reset",
+                        schema: { $ref: "#/definitions/PasswordResetSuccess" }
+                    },
+                    400: {
+                        description: "User not found or account inactive",
+                        schema: { $ref: "#/definitions/UserNotFoundError" }
+                    },
+                    401: {
+                        description: "Incorrect OTP",
+                        schema: { $ref: "#/definitions/IncorrectOTPError" }
+                    },
+                    402: {
+                        description: "Expired OTP",
+                        schema: { $ref: "#/definitions/ExpiredOTPError" }
+                    },
+                    500: {
+                        description: "Failed to reset password",
+                        schema: { $ref: "#/definitions/PasswordResetServerError" }
+                    }
                 }
             }
         }
@@ -695,6 +806,156 @@ var spec = {
                     description: "Indicates whether the user is authenticated",
                     example: false
                 }
+            }
+        },
+        LoginSuccess: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: true },
+                redirectUrl: { type: "string", example: "/" },
+                userData: {
+                    type: "object",
+                    properties: {
+                        fullName: { type: "string" },
+                        studentCode: { type: "string" },
+                        role: { type: "string" }
+                    }
+                }
+            }
+        },
+        LoginUnauthorized: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Tên đăng nhập hoặc mật khẩu không đúng" }
+            }
+        },
+        LoginRecaptchaRequired: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "reCAPTCHA verification is required" }
+            }
+        },
+        LoginServerError: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Đã xảy ra lỗi trong quá trình đăng nhập" }
+            }
+        },
+        LogoutSuccess: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: true },
+                message: { type: "string", example: "Đăng xuất thành công" }
+            }
+        },
+        PasswordChangeSuccess: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: true },
+                message: { type: "string", example: "Đổi mật khẩu thành công" }
+            }
+        },
+        IncorrectOldPasswordError: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Mật khẩu cũ không chính xác" }
+            }
+        },
+        UserNotFoundError: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Email không tồn tại hoặc tài khoản đã bị vô hiệu hóa" }
+            }
+        },
+        PasswordChangeServerError: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Đã xảy ra lỗi khi đổi mật khẩu" }
+            }
+        },
+        OTPSuccess: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: true },
+                message: { type: "string", example: "Mã xác thực đã được gửi đến email của bạn." },
+                otpExpiry: { type: "string", format: "date-time", example: "2023-10-10T14:48:00.000Z" }
+            }
+        },
+        OTPBadRequest: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "reCAPTCHA verification is required" }
+            }
+        },
+        OTPLimitReached: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Đã đạt giới hạn gửi OTP!" }
+            }
+        },
+        OTPRecaptchaFailed: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Xác thực reCAPTCHA không thành công" }
+            }
+        },
+        OTPNotFoundError: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Không tìm thấy tài khoản sinh viên hoặc tài khoản đã bị vô hiệu hóa" }
+            }
+        },
+        OTPTooManyRequests: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Vui lòng đợi 1 phút trước khi yêu cầu mã OTP mới" }
+            }
+        },
+        OTPServerError: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Đã xảy ra lỗi khi gửi mã xác thực" }
+            }
+        },
+        PasswordResetSuccess: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: true },
+                message: { type: "string", example: "Đặt lại mật khẩu thành công" },
+                redirectUrl: { type: "string", example: "/" }
+            }
+        },
+        IncorrectOTPError: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Mã OTP không chính xác" }
+            }
+        },
+        ExpiredOTPError: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Mã OTP đã hết hạn" }
+            }
+        },
+        PasswordResetServerError: {
+            type: "object",
+            properties: {
+                success: { type: "boolean", example: false },
+                error: { type: "string", example: "Đã xảy ra lỗi khi đặt lại mật khẩu" }
             }
         }
     }
